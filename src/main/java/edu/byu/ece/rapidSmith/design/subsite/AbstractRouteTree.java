@@ -26,45 +26,99 @@ import edu.byu.ece.rapidSmith.device.Connection;
 import edu.byu.ece.rapidSmith.device.SitePin;
 import edu.byu.ece.rapidSmith.device.Wire;
 import edu.byu.ece.rapidSmith.util.Exceptions;
+import edu.byu.ece.rapidSmith.examples.aStarRouter.AStarRouter;
 
 import java.util.*;
 
 /**
+ * The Abstract parent tree structure that represents the routing between {@link Connection}s.
+ * Each new Connection is held by a different AbstractRouteTree node. These nodes are then
+ * connected together to represent the routing.
  *
+ * This class is extendable via recursive generics. To see an example of a class that extends
+ * AbstractRouteTree, please view {@link RouteTree} or {@link AStarRouter.AStarRouteTree}.
  */
 public abstract class AbstractRouteTree <RouteTreeT extends AbstractRouteTree> implements Iterable<RouteTreeT> {
-	private RouteTreeT sourceTree; // Do I want bidirectional checks?
+	/** The parent tree of the specified instance */
+	private RouteTreeT sourceTree;
+	/** The wire object that all connected trees share */
 	private final Wire wire;
+	/** The connection that this RouteTree represents */
 	private Connection connection;
+	/** The child trees of the specified instance */
 	private final Collection<RouteTreeT> sinkTrees = new ArrayList<>(1);
 
+	/**
+	 * Sets the wire object in a new RouteTree
+	 * 
+	 * @param wire the Wire to route
+	 */
 	public AbstractRouteTree(Wire wire) {
 		this.wire = wire;
 	}
 
+	/**
+	 * Sets the wire and connection objects in a new RouteTree
+	 * 
+	 * @param wire the Wire to route
+	 * @param connection the first Connection
+	 */
 	public AbstractRouteTree(Wire wire, Connection connection) {
 		this.wire = wire;
 		this.connection = connection;
 	}
 
+	/**
+	 * Simple method that returns a new instance of itself.
+	 * This method must be overridden when extending {@link AbstractRouteTree}.
+	 * 
+	 * @param wire the Wire to route
+	 * @param connection the connection for the new RouteTree to represent
+	 * @return a new RouteTree object of the extended type
+	 */
 	protected abstract RouteTreeT newInstance(Wire wire, Connection connection);
 
+	/**
+	 * Gets the {@link Wire} that this RouteTree structure shares
+	 * 
+	 * @return Wire of this RouteTree instance
+	 */
 	public Wire getWire() {
 		return wire;
 	}
 
+	/**
+	 * Gets the {@link Connection} that this RouteTree instance represents
+	 * 
+	 * @return Connection of this specific instance
+	 */
 	public Connection getConnection() {
 		return connection;
 	}
 
+	/**
+	 * Changes the {@link Connection} that this RouteTree instance represents
+	 * 
+	 * @param connection the {@link Connection} to use for this instance
+	 */
 	protected void setConnection(Connection connection) {
 		this.connection = connection;
 	}
 
+	/**
+	 * Gets the parent tree of the specified instance
+	 * 
+	 * @return the parent tree of the extended type
+	 */
 	public RouteTreeT getSourceTree() {
 		return sourceTree;
 	}
 
+	/**
+	 * Gets the root tree of the overall RouteTree structure
+	 * 
+	 * @return the root tree of the extended type
+	 */
 	public RouteTreeT getFirstSource() {
 		if (isSourced())
 			return (RouteTreeT)sourceTree.getFirstSource();
@@ -72,14 +126,29 @@ public abstract class AbstractRouteTree <RouteTreeT extends AbstractRouteTree> i
 			return (RouteTreeT)this;
 	}
 
+	/**
+	 * Adds a child tree to this node
+	 * 
+	 * @param sinktree the child tree to add
+	 */
 	protected void addSinkTree(RouteTreeT sinktree) {
 		sinkTrees.add(sinktree);
 	}
 
+	/**
+	 * Check if the specified instance is a branch or leaf node 
+	 * 
+	 * @return true if there is a parent, false if root instance
+	 */
 	public boolean isSourced() {
 		return sourceTree != null;
 	}
 
+	/**
+	 * Sets the parent node of the specified instance
+	 * 
+	 * @param sourceTree the new parent tree to use
+	 */
 	protected void setSourceTree(RouteTreeT sourceTree) {
 		this.sourceTree = sourceTree;
 	}
@@ -92,6 +161,8 @@ public abstract class AbstractRouteTree <RouteTreeT extends AbstractRouteTree> i
 	 * Returns true if the RouteTree object is a leaf (i.e. it has no children). 
 	 * For a fully routed net, a leaf tree should connect to either a SitePin
 	 * or BelPin.
+	 * 
+	 * @return true if no children, false otherwise
 	 */
 	public boolean isLeaf() {
 		return sinkTrees.size() == 0;
@@ -100,6 +171,8 @@ public abstract class AbstractRouteTree <RouteTreeT extends AbstractRouteTree> i
 	/**
 	 * Returns the SitePin connected to the wire of the RouteTree. If no SitePin
 	 * object is connected, null is returned.
+	 * 
+	 * @return the SitePin connected to the RouteTree's {@link Wire}. null if none connected.
 	 */
 	public SitePin getConnectingSitePin() {
 		Collection<Connection> pinConnections = wire.getPinConnections();
@@ -109,12 +182,20 @@ public abstract class AbstractRouteTree <RouteTreeT extends AbstractRouteTree> i
 	/**
 	 * Returns the BelPin connected to the wire of the RouteTree. If no BelPin
 	 * object is connected, null is returned.
+	 * 
+	 * @return the BelPin connected to the RouteTree's {@link Wire}. null if none connected.
 	 */
 	public BelPin getConnectingBelPin() {
 		Collection<Connection> terminalConnections = wire.getTerminals();
 		return terminalConnections.isEmpty() ? null : terminalConnections.iterator().next().getBelPin();
 	}
 
+	/**
+	 * Add a new child RouteTree to this instance
+	 * 
+	 * @param c the {@link Connection} to use when creating the child RouteTree
+	 * @return the child RouteTree of the extended type
+	 */
 	public RouteTreeT addConnection(Connection c) {
 		RouteTreeT endTree = newInstance(c.getSinkWire(), c);
 		endTree.setSourceTree(this);
@@ -122,6 +203,14 @@ public abstract class AbstractRouteTree <RouteTreeT extends AbstractRouteTree> i
 		return endTree;
 	}
 
+	/**
+	 * Add a child RouteTree to this instance. An exception is thrown if the child RouteTree is already sourced,
+	 * or the Connection's wire doesn't match the child RouteTree's Wire.
+	 * 
+	 * @param c the {@link Connection} to use when creating the child RouteTree
+	 * @param sink the RouteTree to add as a child
+	 * @return the same RouteTree that was passed in but with a different {@link Connection}
+	 */
 	public RouteTreeT addConnection(Connection c, RouteTreeT sink) {
 		if (sink.getSourceTree() != null)
 			throw new Exceptions.DesignAssemblyException("Sink tree already sourced");
@@ -134,6 +223,11 @@ public abstract class AbstractRouteTree <RouteTreeT extends AbstractRouteTree> i
 		return sink;
 	}
 
+	/**
+	 * Removes any child RouteTree that matches the parameter. Doesn't check grandchildren.
+	 * 
+	 * @param c remove any child matching this Connection
+	 */
 	public void removeConnection(Connection c) {
 		for (Iterator<RouteTreeT> it = sinkTrees.iterator(); it.hasNext(); ) {
 			RouteTreeT sink = it.next();
@@ -144,10 +238,40 @@ public abstract class AbstractRouteTree <RouteTreeT extends AbstractRouteTree> i
 		}
 	}
 
+	/**
+	 * Removes any child or grandchild RouteTree that matches the parameter.
+	 * 
+	 * @param c remove any child or grandchild with this {@link Connection}
+	 */
+	public void removeConnectionRecursive(Connection c) {
+		// Depth first (although it hardly matters since all nodes will be checked)
+		for (Iterator<RouteTreeT> it = sinkTrees.iterator(); it.hasNext(); ) {
+			RouteTreeT sink = it.next();
+			if (sink.getConnection().equals(c)) {
+				sink.setSourceTree(null);
+				it.remove();
+			} else {
+				sink.removeConnectionRecursive(c);
+			}
+		}
+	}
+ 
+	/**
+	 * Scan all connected RouteTrees and return a List of all {@link PIP}s
+	 * 
+	 * @return a list of all connected PIPs
+	 */
 	public List<PIP> getAllPips() {
 		return getFirstSource().getAllPips(new ArrayList<>());
 	}
 
+	/**
+	 * Recursively scan all child RouteTrees and return a List of all {@link PIP}s.
+	 * This method is generally only called from the root RouteTree
+	 *
+	 * @param pips the incomplete list of PIPs to add to when another PIP is found
+	 * @return the list of PIPs that was passed in with any newly found PIPs added
+	 */
 	protected List<PIP> getAllPips(List<PIP> pips) {
 		for (RouteTreeT rt : sinkTrees) {
 			if (rt.getConnection().isPip())
@@ -157,6 +281,11 @@ public abstract class AbstractRouteTree <RouteTreeT extends AbstractRouteTree> i
 		return pips;
 	}
 
+	/**
+	 * Copy this RouteTree into a completely separate structure.
+	 *
+	 * @return the replica structure
+	 */
 	public RouteTreeT deepCopy() {
 		RouteTreeT copy = newInstance(wire, connection);
 		sinkTrees.forEach(rt ->{
@@ -167,43 +296,91 @@ public abstract class AbstractRouteTree <RouteTreeT extends AbstractRouteTree> i
 		return copy;
 	}
 
+	/**
+	 * Remove all RouteTrees that aren't strongly connected to the RouteTree specified by the parameter.
+	 *
+	 * @param terminal the RouteTree to check for. All other non-connected trees will be removed.
+	 * @return true if this RouteTree is connected to a terminal, false otherwise
+	 */
 	public boolean prune(RouteTreeT terminal) {
 		Set<RouteTreeT> toPrune = new HashSet<>();
 		toPrune.add(terminal);
 		return prune(toPrune);
 	}
-	
+
+	/**
+	 * Remove all RouteTrees that aren't strongly connected to one of the RouteTrees specified in the given Set
+	 *
+	 * @param terminals the Set of RouteTrees to check for. All other non-connected trees will be removed.
+	 * @return true if this RouteTree is connected to a terminal, false otherwise
+	 */
 	public boolean prune(Set<RouteTreeT> terminals) {
 		return pruneChildren(terminals);
 	}
 
+	/**
+	 * Helper function to remove unused RouteTrees
+	 *
+	 * @param terminals the set of RouteTrees to check for. All other non-connected trees will be removed.
+	 * @return true if this RouteTree is connected to a terminal, false otherwise
+	 */
 	protected boolean pruneChildren(Set<RouteTreeT> terminals) {
+		// prune children before handling current instance
 		sinkTrees.removeIf(rt -> !rt.pruneChildren(terminals));
+		// only keep this tree if it still has a child tree left (after pruning) or if it is a terminal itself
 		return !sinkTrees.isEmpty() || terminals.contains(this);
 	}
-	
+
+	/**
+	 * Returns a preorder iterator for this tree structure. Same as {@link #preorderIterator}
+	 *
+	 * @return an Iterator implementing the {@link Iterable} interface
+	 */
 	@Override
 	public Iterator<RouteTreeT> iterator() {
 		return preorderIterator();
 	}
 
+	/**
+	 * Returns a preorder iterator for this tree structure. Same as {@link #iterator}
+	 *
+	 * @return an Iterator implementing the {@link Iterable} interface
+	 */
 	public Iterator<RouteTreeT> preorderIterator() {
 		return new PreorderIterator((RouteTreeT)this);
 	}
 
+	/**
+	 * The sub-class that implements the {@link Iterator} interface
+	 */
 	private class PreorderIterator implements Iterator<RouteTreeT> {
+		/** use a stack for preorder iteration */
 		private final Stack<RouteTreeT> stack;
 
+		/** initialize the stack to the given RouteTree
+		 *
+		 * @param initial the RouteTree to visit last
+		 */
 		PreorderIterator(RouteTreeT initial) {
 			this.stack = new Stack<>();
 			this.stack.push(initial);
 		}
 
+		/**
+		 * Check if there is another RouteTree left to iterate over
+		 *
+		 * @return true if more RouteTrees left, false otherwise
+		 */
 		@Override
 		public boolean hasNext() {
 			return !stack.isEmpty();
 		}
 
+		/**
+		 * Visit the current RouteTree and prepare to visit child trees of that RouteTree
+		 *
+		 * @return the next RouteTree to visit
+		 */
 		@Override
 		public RouteTreeT next() {
 			if (!hasNext())
@@ -214,8 +391,11 @@ public abstract class AbstractRouteTree <RouteTreeT extends AbstractRouteTree> i
 		}
 	}
 
-	// Uses identity equals
-
+	/**
+	 * The AbstractRouteTree hash code is the same as the Connection it represents.
+	 *
+	 * @return a pseudo unique integer for this instance
+	 */
 	@Override
 	public int hashCode() {
 		return Objects.hash(connection);

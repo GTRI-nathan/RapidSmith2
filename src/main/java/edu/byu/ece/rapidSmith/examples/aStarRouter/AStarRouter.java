@@ -27,13 +27,31 @@ import edu.byu.ece.rapidSmith.device.Wire;
  */
 public class AStarRouter {
 
+	/**
+	 * the AStarRouteTree class extends basic RouteTree functionality by adding a "cost" data member.
+	 * This "cost" member allows for more fine-tuned routing.
+	 */
 	public final class AStarRouteTree extends AbstractRouteTree<AStarRouteTree> implements Comparable<AStarRouteTree> {
+		/** an integer representing the cost of the given RouteTree instance */
 		private int cost;
 
+		/**
+		 * Sets the wire object in a new AStarRouteTree
+		 *
+		 * @param wire the Wire to route
+		 */
 		public AStarRouteTree(Wire wire) {
 			super(wire);
 		}
 
+		/**
+		 * Simple method that returns a new instance of itself.
+		 * This method must be overridden to extend {@link AbstractRouteTree}.
+		 *
+		 * @param wire the Wire to route
+		 * @param connection the connection for the new AStarRouteTree to represent
+		 * @return a new AStarRouteTree object of the extended type
+		 */
 		@Override
 		protected AStarRouteTree newInstance(Wire wire, Connection connection) {
 			AStarRouteTree tree = new AStarRouteTree(wire);
@@ -41,14 +59,31 @@ public class AStarRouter {
 			return tree;
 		}
 
+		/**
+		 * Gets the cost of the specified RouteTree instance
+		 *
+		 * @return the cost data member
+		 */
 		public int getCost() {
 			return cost;
 		}
 
+		/**
+		 * Change the cost of the specified RouteTree instance
+		 *
+		 * @param new_cost the new value of cost to use
+		 */
 		public void setCost(int new_cost) {
 			cost = new_cost;
 		}
 
+		/**
+		 * This overridden method allows an instance of AStarRouteTree to be compared
+		 * to other instances based on the cost data member
+		 *
+		 * @param o the other AStarRoutetree to compare to
+		 * @return a comparison between cost values
+		 */
 		@Override
 		public int compareTo(AStarRouteTree o) {
 			return Integer.compare(cost, o.cost);

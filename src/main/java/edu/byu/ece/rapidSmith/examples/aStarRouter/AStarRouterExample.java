@@ -4,7 +4,7 @@ import java.io.IOException;
 import edu.byu.ece.rapidSmith.RSEnvironment;
 import edu.byu.ece.rapidSmith.design.subsite.CellDesign;
 import edu.byu.ece.rapidSmith.design.subsite.CellNet;
-import edu.byu.ece.rapidSmith.design.subsite.RouteTree;
+import edu.byu.ece.rapidSmith.design.subsite.AbstractRouteTree;
 import edu.byu.ece.rapidSmith.device.Device;
 import edu.byu.ece.rapidSmith.device.creation.ExtendedDeviceInfo;
 import edu.byu.ece.rapidSmith.interfaces.vivado.TincrCheckpoint;
@@ -46,7 +46,7 @@ public class AStarRouterExample {
 		System.out.println("Routing Net...");
 		AStarRouter router = new AStarRouter();
 		CellNet net = design.getNet("u2/gen_pipe[8].Pipe/Zo_reg_n_0_[9]");
-		RouteTree test = router.routeNet(net);
+		AbstractRouteTree test = router.routeNet(net);
 		net.addIntersiteRouteTree(test);
 		
 		// Displaying results

@@ -30,7 +30,7 @@ import edu.byu.ece.rapidSmith.design.subsite.CellDesign;
 import edu.byu.ece.rapidSmith.design.subsite.CellNet;
 import edu.byu.ece.rapidSmith.design.subsite.CellPin;
 import edu.byu.ece.rapidSmith.design.subsite.Property;
-import edu.byu.ece.rapidSmith.design.subsite.RouteTree;
+import edu.byu.ece.rapidSmith.design.subsite.AbstractRouteTree;
 import edu.byu.ece.rapidSmith.device.BelPin;
 import edu.byu.ece.rapidSmith.device.BelId;
 import edu.byu.ece.rapidSmith.device.SitePin;
@@ -177,14 +177,14 @@ public class DesignAnalyzer {
 	 * @return A string representing the physical route.  It is similar in many ways to XIlinx Directed Routing strings but have been enhanced 
 	 * to show where the route enters and exits sites as well as a description of the sink pins where it terminates.
 	 */
-	public static String createRoutingString(CellNet n, RouteTree rt, boolean head, boolean inside) {
+	public static String createRoutingString(CellNet n, AbstractRouteTree rt, boolean head, boolean inside) {
 		String s="";
 
 		if (rt == null)  return s;
 
 		// A RouteTree object contains a collection of RouteTree objects which represent the downstream segments making up the route.
 		// If this collection has more than element, it represents that the physical wire brances at this point.
-		Collection<RouteTree> sinkTrees = rt.getSinkTrees();
+		Collection<AbstractRouteTree> sinkTrees = rt.getSinkTrees();
 		
 		// Always print first wire at the head of a net's RouteTree. The format is "tileName/wireName".
 		if (head)
@@ -220,8 +220,8 @@ public class DesignAnalyzer {
 		}
 
 		// Otherwise, if it is not a leaf route tree, then iterate across its sink trees and print them
-		for (Iterator<RouteTree> it = sinkTrees.iterator(); it.hasNext(); ) {
-			RouteTree sink = it.next();
+		for (Iterator<AbstractRouteTree> it = sinkTrees.iterator(); it.hasNext(); ) {
+			AbstractRouteTree sink = it.next();
 
 			// If there is only one sink tree then this is just the next wire segment in the route (not a branch).  
 			// Don't enclose this in {}'s, just list it as the next wire segment. 

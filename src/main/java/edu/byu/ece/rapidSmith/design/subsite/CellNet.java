@@ -71,13 +71,13 @@ public class CellNet implements Serializable {
 	/** SitePin source of the net (i.e. where the net leaves the site)*/
 	private SitePin sourceSitePin;
 	/** Route Tree connecting to the source pin of the net*/
-	private RouteTree source;
+	private AbstractRouteTree source;
 	/** List of intersite RouteTree objects for the net*/
-	private List<RouteTree> intersiteRoutes;
+	private List<AbstractRouteTree> intersiteRoutes;
 	/** Maps a connecting BelPin of the net, to the RouteTree connected to the BelPin*/
-	private Map<BelPin, RouteTree> belPinToSinkRTMap;
+	private Map<BelPin, AbstractRouteTree> belPinToSinkRTMap;
 	/** Maps a connecting SitePin of the net, to the RouteTree connected to the SitePin*/
-	private Map<SitePin, RouteTree> sitePinToRTMap;
+	private Map<SitePin, AbstractRouteTree> sitePinToRTMap;
 
 	/**
 	 * Creates a new net with the given name.
@@ -511,7 +511,7 @@ public class CellNet implements Serializable {
 		if (intersiteRoutes == null)
 			return Collections.emptySet();
 		Set<PIP> pipSet = new HashSet<>();
-		for (RouteTree tree : intersiteRoutes) {
+		for (AbstractRouteTree tree : intersiteRoutes) {
 			pipSet.addAll(tree.getAllPips());
 		}
 		return pipSet;
@@ -620,7 +620,7 @@ public class CellNet implements Serializable {
 	 * For intrasite nets, it will end on another BelPin within the site.
 	 * @param source
 	 */
-	public void setSourceRouteTree(RouteTree source) {
+	public void setSourceRouteTree(AbstractRouteTree source) {
 		
 		this.source = source;
 	}
@@ -629,7 +629,7 @@ public class CellNet implements Serializable {
 	 * Returns the starting intrasite route of the net
 	 * @return
 	 */
-	public RouteTree getSourceRouteTree() {
+	public AbstractRouteTree getSourceRouteTree() {
 		return source;
 	}
 	
@@ -641,7 +641,7 @@ public class CellNet implements Serializable {
 	 *  
 	 * @param intersite The RouteTree to add
 	 */
-	public void addIntersiteRouteTree(RouteTree intersite) {	
+	public void addIntersiteRouteTree(AbstractRouteTree intersite) {
 		Objects.requireNonNull(intersite);
 
 		if (intersiteRoutes == null) {
@@ -654,7 +654,7 @@ public class CellNet implements Serializable {
 	 * Sets the list of intersite route trees to the specified list.
 	 * @param routes
 	 */
-	public void setIntersiteRouteTrees(List<RouteTree> routes) {
+	public void setIntersiteRouteTrees(List<AbstractRouteTree> routes) {
 		this.intersiteRoutes = routes;
 	}
 	
@@ -665,7 +665,7 @@ public class CellNet implements Serializable {
 	 * 
 	 * @return
 	 */
-	public RouteTree getIntersiteRouteTree() {
+	public AbstractRouteTree getIntersiteRouteTree() {
 		
 		if (intersiteRoutes == null || intersiteRoutes.isEmpty()) {
 			return null;
@@ -679,7 +679,7 @@ public class CellNet implements Serializable {
 	 * 
 	 * @return A List of RouteTree objects
 	 */
-	public List<RouteTree> getIntersiteRouteTreeList() {
+	public List<AbstractRouteTree> getIntersiteRouteTreeList() {
 	
 		if (intersiteRoutes == null) {
 			return Collections.emptyList();
@@ -688,7 +688,7 @@ public class CellNet implements Serializable {
 	}
 	
 	/**
-	 * @return <code>true</code> if this net has one intersite {@link RouteTree}
+	 * @return <code>true</code> if this net has one intersite {@link AbstractRouteTree}
 	 * 		object connected to it. <code>false</code> otherwise.
 	 */
 	public boolean hasIntersiteRouting() {
@@ -701,7 +701,7 @@ public class CellNet implements Serializable {
 	 * @param bp Connecting BelPin
 	 * @param route RouteTree leading to that BelPin
 	 */
-	public void addSinkRouteTree(BelPin bp, RouteTree route) {
+	public void addSinkRouteTree(BelPin bp, AbstractRouteTree route) {
 		
 		if (belPinToSinkRTMap == null) {
 			belPinToSinkRTMap = new HashMap<>();
@@ -715,7 +715,7 @@ public class CellNet implements Serializable {
 	 * @param sp Source SitePin
 	 * @param route RouteTree sourced by the SitePin
 	 */
-	public void addSinkRouteTree(SitePin sp, RouteTree route) {
+	public void addSinkRouteTree(SitePin sp, AbstractRouteTree route) {
 		
 		if (sitePinToRTMap == null) {
 			sitePinToRTMap = new HashMap<>();
@@ -728,10 +728,10 @@ public class CellNet implements Serializable {
 	 * This RouteTree contains wires INSIDE the Site, and will connect to
 	 * several BelPin sinks within the Site of the SitePin.
 	 * 
-	 * @param belPin Input (sink) SitePin
+	 * @param sitePin Input (sink) SitePin
 	 * @return
 	 */
-	public RouteTree getSinkRouteTree(SitePin sitePin) {
+	public AbstractRouteTree getSinkRouteTree(SitePin sitePin) {
 				
 		return sitePinToRTMap == null ? null : sitePinToRTMap.get(sitePin);
 	}
@@ -749,14 +749,14 @@ public class CellNet implements Serializable {
 	 * be modified by the user. 
 	 * @return
 	 */
-	public Map<SitePin, RouteTree> getSitePinRouteTrees() {
+	public Map<SitePin, AbstractRouteTree> getSitePinRouteTrees() {
 		return sitePinToRTMap;
 	}
 	
 	/**
 	 * Returns a list of RouteTree connected to sink SitePin objects
 	 */
-	public List<RouteTree> getSinkSitePinRouteTrees() {
+	public List<AbstractRouteTree> getSinkSitePinRouteTrees() {
 		
 		if (sitePinToRTMap == null) {
 			return Collections.emptyList();
@@ -780,7 +780,7 @@ public class CellNet implements Serializable {
 	 * 		   RouteTree is connected to the CellPin, then one of the RouteTrees
 	 * 		   will be returned (no guarantee which that will be)
 	 */
-	public RouteTree getSinkRouteTree(CellPin cellPin) {
+	public AbstractRouteTree getSinkRouteTree(CellPin cellPin) {
 		
 		BelPin belPin = cellPin.getMappedBelPin();
 		return belPinToSinkRTMap.get(belPin);
@@ -788,15 +788,15 @@ public class CellNet implements Serializable {
 	
 	/**
 	 * Returns all RouteTrees of this net that are connected to the specified CellPin.
-	 * If the CellPin only maps to one BelPin, use {@link #getSinkRouteTree(CellPin, CellNet) }
+	 * If the CellPin only maps to one BelPin, use {@link #getSinkRouteTree(CellPin) }
 	 * instead.
 	 * 
 	 * @param cellPin sink CellPin
 	 * @return A Set of RouteTree objects that cellPin is connected to.
 	 */
-	public Set <RouteTree> getSinkRouteTrees(CellPin cellPin) {
+	public Set <AbstractRouteTree> getSinkRouteTrees(CellPin cellPin) {
 		
-		Set<RouteTree> connectedRouteTrees = new HashSet<>();
+		Set<AbstractRouteTree> connectedRouteTrees = new HashSet<>();
 		
 		for (BelPin belPin : cellPin.getMappedBelPins()) {
 			if (belPinToSinkRTMap.containsKey(belPin)) {
@@ -814,7 +814,7 @@ public class CellNet implements Serializable {
 	 * @return A {@link RouteTree} that connects to {@code belPin}. If the belPin
 	 * 		does not attach the net net, <code>null</code> is returned.
 	 */
-	public RouteTree getSinkRouteTree(BelPin belPin) {
+	public AbstractRouteTree getSinkRouteTree(BelPin belPin) {
 		return belPinToSinkRTMap == null ? null : belPinToSinkRTMap.get(belPin);
 	}
 	
@@ -843,7 +843,7 @@ public class CellNet implements Serializable {
 	/**
 	 * Returns the BelPin to RouteTree map of the net
 	 */
-	public Map<BelPin, RouteTree> getBelPinRouteTrees() {
+	public Map<BelPin, AbstractRouteTree> getBelPinRouteTrees() {
 		return belPinToSinkRTMap;
 	}
 		

@@ -35,7 +35,7 @@ import edu.byu.ece.rapidSmith.design.subsite.CellNet;
 import edu.byu.ece.rapidSmith.design.subsite.CellPin;
 import edu.byu.ece.rapidSmith.design.subsite.Property;
 import edu.byu.ece.rapidSmith.design.subsite.PropertyType;
-import edu.byu.ece.rapidSmith.design.subsite.RouteTree;
+import edu.byu.ece.rapidSmith.design.subsite.AbstractRouteTree;
 import edu.byu.ece.rapidSmith.device.Bel;
 import edu.byu.ece.rapidSmith.device.BelPin;
 
@@ -109,15 +109,12 @@ public class LutRoutethroughInserter {
 	/**
 	 * Runs the routethrough inserter. Looks for all LUT BELs in the design that are being
 	 * used as a routethrough, and inserts a LUT1 cell instead.
-	 *  
-	 * @param design CellDesign to insert routethroughs
-	 * @param libCells CellLibrary of the current part 
 	 */
 	public CellDesign execute() {
 		
 		for (CellNet net: design.getNets()) {
 								
-			for (RouteTree routeTree : net.getSinkSitePinRouteTrees()) {
+			for (AbstractRouteTree routeTree : net.getSinkSitePinRouteTrees()) {
 				
 				List<CellPin> sinks = new ArrayList<>(4);
 				BelPin rtSource = tryFindRoutethroughSourcePin(routeTree, sinks);
@@ -142,13 +139,13 @@ public class LutRoutethroughInserter {
 	 * @param sinks List to add sink CellPins to
 	 * @return The source BelPin of the routethrough. If no routethrough is found, null is returned
 	 */
-	private BelPin tryFindRoutethroughSourcePin(RouteTree route, List<CellPin> sinks ) {
+	private BelPin tryFindRoutethroughSourcePin(AbstractRouteTree route, List<CellPin> sinks ) {
 		
-		Iterator<RouteTree> rtIterator = route.getFirstSource().iterator();
+		Iterator<AbstractRouteTree> rtIterator = route.getFirstSource().iterator();
 		BelPin rtSource = null;
 		
 		while (rtIterator.hasNext()) {
-			RouteTree current = rtIterator.next();
+			AbstractRouteTree current = rtIterator.next();
 			
 			if(!current.isSourced()) {
 				continue;

@@ -3,7 +3,7 @@ package edu.byu.ece.rapidSmith.design.subsite;
 import edu.byu.ece.rapidSmith.device.Wire;
 import edu.byu.ece.rapidSmith.device.Connection;
 
-public final class RouteTree extends AbstractRouteTree<RouteTree> {
+public class RouteTree extends AbstractRouteTree<RouteTree> {
     public RouteTree(Wire wire) {
         super(wire);
     }

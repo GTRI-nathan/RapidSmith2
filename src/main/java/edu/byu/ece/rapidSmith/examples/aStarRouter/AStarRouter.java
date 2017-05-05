@@ -53,22 +53,6 @@ public class AStarRouter {
 		public int compareTo(AStarRouteTree o) {
 			return Integer.compare(cost, o.cost);
 		}
-
-		private RouteTree convertToRouteTree(RouteTree parent) {
-			RouteTree copy = parent.addConnection(getConnection());
-			getSinkTrees().forEach(rt -> {
-				rt.convertToRouteTree(copy);
-			});
-			return copy;
-		}
-
-		public RouteTree convertToRouteTree() {
-			RouteTree copy = new RouteTree(getWire(), getConnection());
-			getSinkTrees().forEach(rt ->{
-				rt.convertToRouteTree(copy);
-			});
-			return copy;
-		}
 	}
 
 	private final Comparator<AStarRouteTree> routeTreeComparator;
@@ -103,7 +87,7 @@ public class AStarRouter {
 	 * @param net {@link CellNet} to route
 	 * @return The routed net in a {@link RouteTree} data structure
 	 */
-	public RouteTree routeNet(CellNet net) {
+	public AbstractRouteTree routeNet(CellNet net) {
 		
 		// Initialize the route
 		AStarRouteTree start = initializeRoute(net);
@@ -163,7 +147,7 @@ public class AStarRouter {
 			start.prune(terminals);
 		}
 		
-		return start.convertToRouteTree();
+		return start;
 	}
 
 	/**

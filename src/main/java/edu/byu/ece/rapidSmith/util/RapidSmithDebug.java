@@ -27,7 +27,7 @@ import edu.byu.ece.rapidSmith.design.subsite.CellDesign;
 import edu.byu.ece.rapidSmith.design.subsite.Cell;
 import edu.byu.ece.rapidSmith.design.subsite.CellNet;
 import edu.byu.ece.rapidSmith.design.subsite.CellPin;
-import edu.byu.ece.rapidSmith.design.subsite.RouteTree;
+import edu.byu.ece.rapidSmith.design.subsite.AbstractRouteTree;
 import edu.byu.ece.rapidSmith.device.Wire;
 
 /**
@@ -49,20 +49,20 @@ public final class RapidSmithDebug {
 	 *   
 	 * @param rt RouteTree to print
 	 */
-	public static void printRouteTree(RouteTree rt) {
+	public static void printRouteTree(AbstractRouteTree rt) {
 		printRouteTree(rt, 0);
 	}
 	
 	/*
 	 * Recursive method to print a RouteTree data structure
 	 */
-	private static void printRouteTree(RouteTree rt, int level) {
+	private static void printRouteTree(AbstractRouteTree rt, int level) {
 		Wire w = rt.getWire();
 		System.out.println(w.getTile() + "/" + w.getWireName() + "--> " + level);
 			
 		level++;
-		for(RouteTree r: rt.getSinkTrees()) {
-			printRouteTree(r, level);
+		for(Object r: rt.getSinkTrees()) {
+			printRouteTree((AbstractRouteTree)r, level);
 		}
 	}
 	
@@ -81,31 +81,31 @@ public final class RapidSmithDebug {
 	
 	/**
 	 * Creates a TCL command that can be run in Vivado to highlight all wires 
-	 * in the specified {@link RouteTree} object. This command can be used to 
+	 * in the specified {@link AbstractRouteTree} object. This command can be used to
 	 * visualize a RouteString structure in the Vivado GUI.
 	 *  
 	 * @param routeTree RouteTree source (i.e. the top of the tree)
 	 * @return A formatted TCL command that can be run directly in Vivado.
 	 */
-	public static String createHighlightWiresTclCommand(RouteTree routeTree) {
+	public static String createHighlightWiresTclCommand(AbstractRouteTree routeTree) {
 		return createHighlightWiresTclCommand(Collections.singletonList(routeTree));
 	}
 	
 	/**
 	 * Creates a TCL command that can be run in Vivado to highlight all wires 
-	 * in the specified collection of {@link RouteTree} objects. This command can be used to 
+	 * in the specified collection of {@link AbstractRouteTree} objects. This command can be used to
 	 * visualize a collection RouteString structure in the Vivado GUI.
 	 *  
 	 * @param routeTrees A collection of RouteTree objects
 	 * @return A formatted TCL command that can be run directly in Vivado.
 	 */
-	public static String createHighlightWiresTclCommand(Collection<RouteTree> routeTrees) {
+	public static String createHighlightWiresTclCommand(Collection<AbstractRouteTree> routeTrees) {
 		String cmd = "select [get_wires {";
 		
-		for(RouteTree rt : routeTrees) {
+		for(AbstractRouteTree rt : routeTrees) {
 
-			for (RouteTree routeTree : rt.getFirstSource()) {
-				Wire w = routeTree.getWire();
+			for (Object routeTree : rt.getFirstSource()) {
+				Wire w = ((AbstractRouteTree)routeTree).getWire();
 				cmd += w.getTile().getName() + "/" + w.getWireName() + " ";
 			}
 		}

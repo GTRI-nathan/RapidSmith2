@@ -36,7 +36,7 @@ import edu.byu.ece.rapidSmith.design.subsite.Cell;
 import edu.byu.ece.rapidSmith.design.subsite.CellDesign;
 import edu.byu.ece.rapidSmith.design.subsite.CellNet;
 import edu.byu.ece.rapidSmith.design.subsite.CellPin;
-import edu.byu.ece.rapidSmith.design.subsite.RouteTree;
+import edu.byu.ece.rapidSmith.design.subsite.AbstractRouteTree;
 import edu.byu.ece.rapidSmith.device.Site;
 import edu.byu.ece.rapidSmith.device.families.FamilyInfo;
 import edu.byu.ece.rapidSmith.device.families.FamilyInfos;
@@ -227,13 +227,13 @@ public class DotFilePrinter {
 	
 
 	/**
-	 * Creates a DOT string of the specified {@link RouteTree} object.
+	 * Creates a DOT string of the specified {@link AbstractRouteTree} object.
 	 * The resulting DOT graph is given a default name of "RouteTree"
 	 * 
-	 * @param tree {@link RouteTree} to print
+	 * @param route {@link AbstractRouteTree} to print
 	 * @return A DOT string
 	 */
-	public static String getRouteTreeDotString(RouteTree route) {
+	public static String getRouteTreeDotString(AbstractRouteTree route) {
 		return getRouteTreeDotString(route, "RouteTree");
 	}
 	
@@ -248,16 +248,16 @@ public class DotFilePrinter {
 	}
 	
 	/**
-	 * Creates a DOT string of the specified {@link RouteTree} object.
+	 * Creates a DOT string of the specified {@link AbstractRouteTree} object.
 	 * 
-	 * @param tree {@link RouteTree} to print
+	 * @param route {@link AbstractRouteTree} to print
 	 * @param name Name of the generated DOT graph.
 	 * @return A DOT string
 	 */
-	public static String getRouteTreeDotString(RouteTree route, String name) {
+	public static String getRouteTreeDotString(AbstractRouteTree route, String name) {
 		// initialize function
-		Queue<RouteTree> rtQueue = new LinkedList<RouteTree>();
-		Map<RouteTree, Integer> nodeIds = new HashMap<>(); 
+		Queue<AbstractRouteTree> rtQueue = new LinkedList<>();
+		Map<AbstractRouteTree, Integer> nodeIds = new HashMap<>();
 		StringBuilder builder = new StringBuilder();
 		
 		if(route == null) {
@@ -268,19 +268,20 @@ public class DotFilePrinter {
 		builder.append("digraph \"" + name + "\"{\n");
 				
 		// create the unique ID list for RouteTrees
-		route.iterator().forEachRemaining(rt -> nodeIds.put(rt, nodeIds.size()));
+		route.iterator().forEachRemaining(rt -> nodeIds.put((AbstractRouteTree)rt, nodeIds.size()));
 		
 		// print the node and edge information for the RouteTree
 		rtQueue.add(route);
 
 		while (!rtQueue.isEmpty()) {
-			RouteTree tmp = rtQueue.poll();
+			AbstractRouteTree tmp = rtQueue.poll();
 			
 			builder.append(String.format(" %d [label=\"%s\"]\n", nodeIds.get(tmp), tmp.getWire().getFullWireName()));
 			
 			// only print edges if the route tree has any
 			if (!tmp.isLeaf()) {
-				for (RouteTree sink : tmp.getSinkTrees()) {
+				for (Object s : tmp.getSinkTrees()) {
+					AbstractRouteTree sink = (AbstractRouteTree)s;
 					String edgeColor = sink.getConnection().isPip() ? "red" : "black";
 					builder.append(String.format(" %d->%d [color=\"%s\"]\n", nodeIds.get(tmp), nodeIds.get(sink), edgeColor));
 					rtQueue.add(sink);

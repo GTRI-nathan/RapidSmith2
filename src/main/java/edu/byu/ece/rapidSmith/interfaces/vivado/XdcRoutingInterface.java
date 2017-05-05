@@ -36,6 +36,7 @@ import edu.byu.ece.rapidSmith.design.subsite.CellDesign;
 import edu.byu.ece.rapidSmith.design.subsite.CellNet;
 import edu.byu.ece.rapidSmith.design.subsite.CellPin;
 import edu.byu.ece.rapidSmith.device.Connection;
+import edu.byu.ece.rapidSmith.design.subsite.AbstractRouteTree;
 import edu.byu.ece.rapidSmith.design.subsite.RouteTree;
 import edu.byu.ece.rapidSmith.device.BelPin;
 import edu.byu.ece.rapidSmith.device.Bel;
@@ -281,7 +282,7 @@ public class XdcRoutingInterface {
 		// The first token is either VCC or START_WIRES, not a wire name
 		for (int i = 1; i < startWires.length; i++ ) {
 			String startWire = startWires[i];
-			RouteTree netRouteTree = recreateRoutingNetwork(net, startWire, wiresInNet);
+			AbstractRouteTree netRouteTree = recreateRoutingNetwork(net, startWire, wiresInNet);
 			net.addIntersiteRouteTree(netRouteTree);
 		}
 	}
@@ -306,13 +307,13 @@ public class XdcRoutingInterface {
 			wiresInNet.add(toks[i]);
 		}
 		
-		RouteTree netRouteTree = recreateRoutingNetwork(net, startWire, wiresInNet);
+		AbstractRouteTree netRouteTree = recreateRoutingNetwork(net, startWire, wiresInNet);
 		net.addIntersiteRouteTree(netRouteTree);		
 		net.computeRouteStatus();
 	}
 	
 	/**
-	 * Creates a {@link RouteTree} data structure from a set of wires
+	 * Creates a {@link AbstractRouteTree} data structure from a set of wires
 	 * that are in a net. This RouteTree represents the 
 	 * <b>physical intersite</b> route of the net.
 	 * 
@@ -320,15 +321,15 @@ public class XdcRoutingInterface {
 	 * @param startWireName The name of the wire connected to the source site pin
 	 * 						of the net. This is used to initailize the route.
 	 * @param wiresInNet A set of wire names that exist in the net.
-	 * @return {@link RouteTree} representing the physical intersite route of the net
+	 * @return {@link AbstractRouteTree} representing the physical intersite route of the net
 	 */
-	private RouteTree recreateRoutingNetwork(CellNet net, String startWireName, Set<String> wiresInNet) {
+	private AbstractRouteTree recreateRoutingNetwork(CellNet net, String startWireName, Set<String> wiresInNet) {
 		
 		// initialize the routing data structure with the start wire
-		RouteTree start = initializeRoute(startWireName);
-		Queue<RouteTree> searchQueue = new LinkedList<>();
+		AbstractRouteTree start = initializeRoute(startWireName);
+		Queue<AbstractRouteTree> searchQueue = new LinkedList<>();
 		Set<Wire> visited = new HashSet<>();
-		Set<RouteTree> terminals = new HashSet<>();
+		Set<AbstractRouteTree> terminals = new HashSet<>();
 		
 		// initialize the search queue and visited wire set
 		searchQueue.add(start); 
@@ -336,7 +337,7 @@ public class XdcRoutingInterface {
 		
 		while (!searchQueue.isEmpty()) {
 			
-			RouteTree routeTree = searchQueue.poll();
+			AbstractRouteTree routeTree = searchQueue.poll();
 						
 			// add connecting wires that exist in the net to the search queue
 			int connectionCount = 0; 
@@ -346,7 +347,7 @@ public class XdcRoutingInterface {
 				
 				if (wiresInNet.contains(sinkWire.getFullWireName()) && !visited.contains(sinkWire)) {
 					connectionCount++;
-					RouteTree sinkTree = routeTree.addConnection(conn);
+					AbstractRouteTree sinkTree = routeTree.addConnection(conn);
 					searchQueue.add(sinkTree);
 					visited.add(sinkWire);
 				}
@@ -368,14 +369,14 @@ public class XdcRoutingInterface {
 	}
 	
 	/**
-	 * Creates new {@link TileWire} and {@link RouteTree} objects based on the input
+	 * Creates new {@link TileWire} and {@link AbstractRouteTree} objects based on the input
 	 * start wire name. This function is used to create an initial RouteTree when
 	 * a nets physical routing is being reconstructed.
 	 *   
 	 * @param startWireName Name of a wire in the currently loaded device
-	 * @return RouteTree object representing the start wire
+	 * @return AbstractRouteTree object representing the start wire
 	 */
-	private RouteTree initializeRoute(String startWireName) {
+	private AbstractRouteTree initializeRoute(String startWireName) {
 		String[] startWireToks = startWireName.split("/");
 		Tile tile = tryGetTile(startWireToks[0]);
 		int wireEnum = tryGetWireEnum(startWireToks[1]);
@@ -639,16 +640,16 @@ public class XdcRoutingInterface {
 		
 		// Initialize the search
 		Set<Wire> visitedWires = new HashSet<>(); // used to prevent cycles
-		Queue<RouteTree> routeQueue = new LinkedList<>();
+		Queue<AbstractRouteTree> routeQueue = new LinkedList<>();
 		
-		RouteTree startRoute = intrasiteRoute.getStartRoute();
+		AbstractRouteTree startRoute = intrasiteRoute.getStartRoute();
 		Wire startWire = startRoute.getWire();
 		routeQueue.add(startRoute);
 		visitedWires.add(startWire);
 		
 		// continue the search until we have nowhere else to go
 		while (!routeQueue.isEmpty()) {
-			RouteTree currentRoute = routeQueue.poll();
+			AbstractRouteTree currentRoute = routeQueue.poll();
 			Wire currentWire = currentRoute.getWire();
 
 			// reached a used bel pin that is not the source
@@ -672,7 +673,7 @@ public class XdcRoutingInterface {
 					
 					// only add valid search connections to the queue
 					if (isQualifiedConnection(conn, currentWire, usedSiteWires)) {
-						RouteTree next = currentRoute.addConnection(conn);
+						AbstractRouteTree next = currentRoute.addConnection(conn);
 						routeQueue.add(next);
 						visitedWires.add(next.getWire());
 					}
@@ -991,13 +992,13 @@ public class XdcRoutingInterface {
 		
 		if (net.getType().equals(NetType.WIRE)) {
 			// assuming the first RouteTree is the actual route
-			RouteTree route = net.getIntersiteRouteTree();// .getRouteTrees().iterator().next();
+			AbstractRouteTree route = net.getIntersiteRouteTree();// .getRouteTrees().iterator().next();
 			return createVivadoRoutingString(route.getFirstSource());
 		}
 		
 		// otherwise we assume its a VCC or GND net, which has a special Route string
 		String routeString = "{ ";
-		for (RouteTree rt : net.getIntersiteRouteTreeList()) {
+		for (AbstractRouteTree rt : net.getIntersiteRouteTreeList()) {
 			routeString += "( " + createVivadoRoutingString(rt.getFirstSource()) + ") ";
 		}
 		return routeString + " }"; 		
@@ -1007,22 +1008,22 @@ public class XdcRoutingInterface {
 	 * Creates and formats the route tree into a string that Vivado understands and can be applied to a Vivado net
 	 * TODO: refactor...this code is confusing to read
 	 */
-	private static String createVivadoRoutingString (RouteTree rt) {
+	private static String createVivadoRoutingString (AbstractRouteTree rt) {
 		
-		RouteTree currentRoute = rt; 
+		AbstractRouteTree currentRoute = rt;
 		String routeString = "{ ";
 			
 		while ( true ) {
 			Tile t = currentRoute.getWire().getTile();
 			routeString = routeString.concat(t.getName() + "/" + currentRoute.getWire().getWireName() + " ");
 						
-			ArrayList<RouteTree> children = (ArrayList<RouteTree>) currentRoute.getSinkTrees();
+			ArrayList<AbstractRouteTree> children = (ArrayList<AbstractRouteTree>) currentRoute.getSinkTrees();
 			
 			if (children.size() == 0)
 				break;
 			
-			ArrayList<RouteTree> trueChildren = new ArrayList<>();
-			for(RouteTree child: children) {
+			ArrayList<AbstractRouteTree> trueChildren = new ArrayList<>();
+			for(AbstractRouteTree child: children) {
 				Connection c = child.getConnection();
 				if (c.isPip() || c.isRouteThrough()) {
 					trueChildren.add(child);
@@ -1054,12 +1055,12 @@ public class XdcRoutingInterface {
 	 * @author Thomas Townsend
 	 */
 	public interface IntrasiteRoute {
-		boolean addBelPinSink(BelPin belPin, RouteTree terminal);
-		boolean addSitePinSink(SitePin sitePin, RouteTree terminal);
+		boolean addBelPinSink(BelPin belPin, AbstractRouteTree terminal);
+		boolean addSitePinSink(SitePin sitePin, AbstractRouteTree terminal);
 		void pruneRoute();
 		void applyRouting();
 		boolean isValid();
-		RouteTree getStartRoute();
+		AbstractRouteTree getStartRoute();
 		void setSinksAsRouted();
 		boolean isValidBelPinSink(Wire currentWire);
 	}
@@ -1072,8 +1073,8 @@ public class XdcRoutingInterface {
 		private final SitePin source;
 		private final CellNet net; 
 		private final Set<BelPin> belPinSinks;
-		private final Set<RouteTree> terminals;
-		private final RouteTree route;
+		private final Set<AbstractRouteTree> terminals;
+		private final AbstractRouteTree route;
 		private final boolean allowUnusedBelPins; 
 		
 		public IntrasiteRouteSitePinSource (SitePin source, CellNet net, boolean allowUnusedBelPinSinks) {
@@ -1086,12 +1087,12 @@ public class XdcRoutingInterface {
 		}
 				
 		@Override
-		public RouteTree getStartRoute() {
+		public AbstractRouteTree getStartRoute() {
 			return route;
 		}
 	
 		@Override
-		public boolean addBelPinSink(BelPin belPin, RouteTree terminal) {
+		public boolean addBelPinSink(BelPin belPin, AbstractRouteTree terminal) {
 			
 			CellPin sinkCellPin = belPinToCellPinMap.get(belPin);
 			
@@ -1112,7 +1113,7 @@ public class XdcRoutingInterface {
 		}
 
 		@Override
-		public boolean addSitePinSink(SitePin sitePin, RouteTree terminal) {
+		public boolean addSitePinSink(SitePin sitePin, AbstractRouteTree terminal) {
 			throw new AssertionError("Intrasite Route starting at input site pin should not reach output site pin " + source);
 		}
 
@@ -1192,8 +1193,8 @@ public class XdcRoutingInterface {
 		private final BelPin source;
 		private final Set<BelPin> belPinSinks;
 		private final Set<SitePin> sitePinSinks;
-		private final RouteTree route;
-		private final Set<RouteTree> terminals;
+		private final AbstractRouteTree route;
+		private final Set<AbstractRouteTree> terminals;
 		private final boolean isContained;
 		private final boolean isStatic;
 		
@@ -1208,7 +1209,7 @@ public class XdcRoutingInterface {
 		}
 
 		@Override
-		public boolean addBelPinSink(BelPin belPin, RouteTree terminal) {
+		public boolean addBelPinSink(BelPin belPin, AbstractRouteTree terminal) {
 
 			this.belPinSinks.add(belPin);
 			this.terminals.add(terminal);
@@ -1217,7 +1218,7 @@ public class XdcRoutingInterface {
 		}
 
 		@Override
-		public boolean addSitePinSink(SitePin sitePin, RouteTree terminal) {
+		public boolean addSitePinSink(SitePin sitePin, AbstractRouteTree terminal) {
 			
 			// || isStatic
 			if (isContained) {
@@ -1267,7 +1268,7 @@ public class XdcRoutingInterface {
 		}
 
 		@Override
-		public RouteTree getStartRoute() {
+		public AbstractRouteTree getStartRoute() {
 			return route;
 		}
 		
